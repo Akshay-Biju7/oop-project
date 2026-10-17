@@ -1,0 +1,21 @@
+# Compiled class files
+target/
+*.class
+
+# Log files
+*.log
+
+# Databases & local caches
+pgtr_local.db
+pgtr_local.db-journal
+
+# Local Environment configs with personal secrets
+.env
+db.properties
+
+# Tools
+.tools/
+
+# OS specific files
+.DS_Store
+Thumbs.db

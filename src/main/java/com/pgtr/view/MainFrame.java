@@ -1,0 +1,463 @@
+package com.pgtr.view;
+
+import com.pgtr.database.DatabaseManager;
+import com.pgtr.model.Reminder;
+import com.pgtr.model.User;
+import com.pgtr.service.ReminderService;
+import com.pgtr.service.UserSession;
+import com.pgtr.util.DateUtil;
+import com.pgtr.util.Theme;
+import com.pgtr.view.components.ModernCard;
+import com.pgtr.view.components.NeonButton;
+
+import javax.swing.*;
+import java.awt.*;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Primary application window featuring a dark charcoal sidebar, top navigation bar,
+ * live workout streak indicator, notification reminders bell, and dynamic CardLayout views.
+ */
+public class MainFrame extends JFrame {
+
+    private final CardLayout cardLayout;
+    private final JPanel contentCardsPanel;
+    private final ReminderService reminderService;
+
+    // View Panels
+    private DashboardPanel dashboardPanel;
+    private WorkoutPanel workoutPanel;
+    private NutritionPanel nutritionPanel;
+    private HealthPanel healthPanel;
+    private HabitsPanel habitsPanel;
+    private GoalsPanel goalsPanel;
+    private PlannerPanel plannerPanel;
+    private ReportsPanel reportsPanel;
+    private SettingsPanel settingsPanel;
+
+    // Top Bar Indicators
+    private JLabel currentViewTitleLabel;
+    private JLabel streakBadgeLabel;
+    private JLabel dbStatusBadgeLabel;
+    private JLabel reminderBellLabel;
+    private JLabel userProfileNameLabel;
+
+    // Sidebar button references for active highlighting
+    private final Map<String, JButton> navButtonsMap = new HashMap<>();
+
+    public MainFrame(User initialUser) {
+        super("Personal Gain Tracking System — Dashboard");
+        this.reminderService = new ReminderService();
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1280, 820);
+        setMinimumSize(new Dimension(1024, 680));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(Theme.BG_DARK);
+        setLayout(new BorderLayout());
+
+        // Left Sidebar Navigation
+        JPanel sidebar = createSidebar();
+        add(sidebar, BorderLayout.WEST);
+
+        // Center Container: TopBar + Content Area
+        JPanel centerRoot = new JPanel(new BorderLayout());
+        centerRoot.setOpaque(false);
+
+        JPanel topBar = createTopBar();
+        centerRoot.add(topBar, BorderLayout.NORTH);
+
+        cardLayout = new CardLayout();
+        contentCardsPanel = new JPanel(cardLayout);
+        contentCardsPanel.setOpaque(false);
+
+        initViews();
+        centerRoot.add(contentCardsPanel, BorderLayout.CENTER);
+
+        add(centerRoot, BorderLayout.CENTER);
+
+        // Show Dashboard first
+        showView("DASHBOARD");
+        updateProfileBadge(initialUser);
+        updateDatabaseStatus();
+        updateRemindersCount();
+    }
+
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setPreferredSize(new Dimension(240, 0));
+        sidebar.setBackground(Theme.BG_SIDEBAR);
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.BORDER));
+
+        // Top Brand Logo
+        JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 20));
+        brandPanel.setOpaque(false);
+
+        JLabel logoIcon = new JLabel("⚡");
+        logoIcon.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        logoIcon.setForeground(Theme.PRIMARY);
+
+        JLabel brandText = new JLabel("PGTR FITNESS");
+        brandText.setFont(Theme.TITLE);
+        brandText.setForeground(Theme.TEXT_PRIMARY);
+
+        brandPanel.add(logoIcon);
+        brandPanel.add(brandText);
+        sidebar.add(brandPanel, BorderLayout.NORTH);
+
+        // Center Navigation Menu
+        JPanel navMenu = new JPanel(new GridLayout(0, 1, 0, 4));
+        navMenu.setOpaque(false);
+        navMenu.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        addNavItem(navMenu, "DASHBOARD", "📊  Dashboard");
+        addNavItem(navMenu, "WORKOUTS", "🏋️  Gym & Workouts");
+        addNavItem(navMenu, "NUTRITION", "🥗  Nutrition & Macros");
+        addNavItem(navMenu, "HEALTH", "📏  Health & Metrics");
+        addNavItem(navMenu, "HABITS", "💧  Water & Sleep");
+        addNavItem(navMenu, "GOALS", "🎯  Goals & Badges");
+        addNavItem(navMenu, "PLANNER", "📅  Weekly Planner");
+        addNavItem(navMenu, "REPORTS", "📈  Progress Reports");
+        addNavItem(navMenu, "SETTINGS", "⚙️  Settings & DB");
+
+        sidebar.add(navMenu, BorderLayout.CENTER);
+
+        // Bottom User Summary & Logout
+        JPanel userFooter = new JPanel(new BorderLayout(0, 8));
+        userFooter.setOpaque(false);
+        userFooter.setBorder(BorderFactory.createEmptyBorder(16, 16, 20, 16));
+
+        JPanel userCard = new JPanel(new GridLayout(2, 1, 0, 2));
+        userCard.setOpaque(false);
+
+        userProfileNameLabel = new JLabel("Athlete");
+        userProfileNameLabel.setFont(Theme.BODY_BOLD);
+        userProfileNameLabel.setForeground(Theme.TEXT_PRIMARY);
+
+        JLabel roleLabel = new JLabel("Gym Pro Edition");
+        roleLabel.setFont(Theme.SMALL);
+        roleLabel.setForeground(Theme.TEXT_MUTED);
+
+        userCard.add(userProfileNameLabel);
+        userCard.add(roleLabel);
+        userFooter.add(userCard, BorderLayout.NORTH);
+
+        NeonButton logoutBtn = new NeonButton("Sign Out", NeonButton.ButtonType.SECONDARY);
+        logoutBtn.addActionListener(e -> handleLogout());
+        userFooter.add(logoutBtn, BorderLayout.SOUTH);
+
+        sidebar.add(userFooter, BorderLayout.SOUTH);
+
+        return sidebar;
+    }
+
+    private void addNavItem(JPanel menu, String key, String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(Theme.BODY);
+        btn.setForeground(Theme.TEXT_MUTED);
+        btn.setBackground(Theme.BG_SIDEBAR);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(true);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+
+        btn.addActionListener(e -> showView(key));
+        navButtonsMap.put(key, btn);
+        menu.add(btn);
+    }
+
+    private JPanel createTopBar() {
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setPreferredSize(new Dimension(0, 60));
+        topBar.setBackground(Theme.BG_DARK);
+        topBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.BORDER));
+
+        // Left Title
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 24, 16));
+        left.setOpaque(false);
+        currentViewTitleLabel = new JLabel("Dashboard Overview");
+        currentViewTitleLabel.setFont(Theme.TITLE);
+        currentViewTitleLabel.setForeground(Theme.TEXT_PRIMARY);
+        left.add(currentViewTitleLabel);
+        topBar.add(left, BorderLayout.WEST);
+
+        // Right Indicators & Notifications
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 12));
+        right.setOpaque(false);
+
+        // Streak Badge Pill
+        streakBadgeLabel = new JLabel("🔥 0 Day Streak", SwingConstants.CENTER);
+        streakBadgeLabel.setFont(Theme.BODY_BOLD);
+        streakBadgeLabel.setForeground(Theme.WARNING);
+        streakBadgeLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(4, 10, 4, 10)
+        ));
+        right.add(streakBadgeLabel);
+
+        // Database Pill
+        dbStatusBadgeLabel = new JLabel("● Database", SwingConstants.CENTER);
+        dbStatusBadgeLabel.setFont(Theme.SMALL);
+        dbStatusBadgeLabel.setForeground(Theme.PRIMARY);
+        dbStatusBadgeLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        dbStatusBadgeLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(4, 10, 4, 10)
+        ));
+        dbStatusBadgeLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                showView("SETTINGS");
+            }
+        });
+        right.add(dbStatusBadgeLabel);
+
+        // Reminders Bell Icon with Badge Counter
+        reminderBellLabel = new JLabel("🔔 0 Reminders", SwingConstants.CENTER);
+        reminderBellLabel.setFont(Theme.SMALL);
+        reminderBellLabel.setForeground(Theme.WATER_CYAN);
+        reminderBellLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        reminderBellLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(4, 10, 4, 10)
+        ));
+        reminderBellLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                showRemindersDialog();
+            }
+        });
+        right.add(reminderBellLabel);
+
+        // Date Display
+        JLabel dateLabel = new JLabel(DateUtil.formatDate(LocalDate.now()));
+        dateLabel.setFont(Theme.BODY);
+        dateLabel.setForeground(Theme.TEXT_MUTED);
+        right.add(dateLabel);
+
+        topBar.add(right, BorderLayout.EAST);
+        return topBar;
+    }
+
+    private void initViews() {
+        dashboardPanel = new DashboardPanel(this);
+        workoutPanel = new WorkoutPanel(this);
+        nutritionPanel = new NutritionPanel(this);
+        healthPanel = new HealthPanel(this);
+        habitsPanel = new HabitsPanel(this);
+        goalsPanel = new GoalsPanel(this);
+        plannerPanel = new PlannerPanel(this);
+        reportsPanel = new ReportsPanel(this);
+        settingsPanel = new SettingsPanel(this);
+
+        contentCardsPanel.add(dashboardPanel, "DASHBOARD");
+        contentCardsPanel.add(workoutPanel, "WORKOUTS");
+        contentCardsPanel.add(nutritionPanel, "NUTRITION");
+        contentCardsPanel.add(healthPanel, "HEALTH");
+        contentCardsPanel.add(habitsPanel, "HABITS");
+        contentCardsPanel.add(goalsPanel, "GOALS");
+        contentCardsPanel.add(plannerPanel, "PLANNER");
+        contentCardsPanel.add(reportsPanel, "REPORTS");
+        contentCardsPanel.add(settingsPanel, "SETTINGS");
+    }
+
+    public void showView(String viewKey) {
+        cardLayout.show(contentCardsPanel, viewKey);
+
+        // Update active sidebar button visual
+        for (Map.Entry<String, JButton> entry : navButtonsMap.entrySet()) {
+            boolean active = entry.getKey().equals(viewKey);
+            JButton b = entry.getValue();
+            if (active) {
+                b.setBackground(new Color(0x18, 0x22, 0x1A));
+                b.setForeground(Theme.PRIMARY);
+                b.setFont(Theme.BODY_BOLD);
+                b.setBorder(BorderFactory.createMatteBorder(0, 4, 0, 0, Theme.PRIMARY));
+            } else {
+                b.setBackground(Theme.BG_SIDEBAR);
+                b.setForeground(Theme.TEXT_MUTED);
+                b.setFont(Theme.BODY);
+                b.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+            }
+        }
+
+        // Trigger on-navigate refresh
+        switch (viewKey) {
+            case "DASHBOARD":
+                currentViewTitleLabel.setText("Fitness Dashboard & Daily Overview");
+                dashboardPanel.refreshDashboard();
+                break;
+            case "WORKOUTS":
+                currentViewTitleLabel.setText("Gym Workout Logger & Timers");
+                workoutPanel.refreshWorkouts();
+                break;
+            case "NUTRITION":
+                currentViewTitleLabel.setText("Daily Nutrition, Macros & Food Logs");
+                nutritionPanel.refreshNutrition();
+                break;
+            case "HEALTH":
+                currentViewTitleLabel.setText("Health Metrics, Body Measurements & BMI");
+                healthPanel.refreshHealth();
+                break;
+            case "HABITS":
+                currentViewTitleLabel.setText("Hydration Intake & Sleep Recovery");
+                habitsPanel.refreshHabits();
+                break;
+            case "GOALS":
+                currentViewTitleLabel.setText("Personal Gain Goals & Trophy Case");
+                goalsPanel.refreshGoals();
+                break;
+            case "PLANNER":
+                currentViewTitleLabel.setText("Weekly Training Schedule (Mon – Sun)");
+                plannerPanel.refreshPlanner();
+                break;
+            case "REPORTS":
+                currentViewTitleLabel.setText("Progress Analysis, Trend Charts & Exports");
+                reportsPanel.refreshReports();
+                break;
+            case "SETTINGS":
+                currentViewTitleLabel.setText("Profile Settings & Database Connection");
+                settingsPanel.loadProfile();
+                break;
+        }
+
+        updateRemindersCount();
+    }
+
+    public void updateStreak(int streak) {
+        streakBadgeLabel.setText(String.format("🔥 %d Day Streak", streak));
+    }
+
+    public void updateProfileBadge(User user) {
+        if (user != null) {
+            userProfileNameLabel.setText(user.getFullName());
+        }
+    }
+
+    public void updateDatabaseStatus() {
+        boolean isSupabase = DatabaseManager.getInstance().isConnectedToSupabase();
+        if (isSupabase) {
+            dbStatusBadgeLabel.setText("● Supabase Cloud");
+            dbStatusBadgeLabel.setForeground(Theme.PRIMARY);
+        } else {
+            dbStatusBadgeLabel.setText("● Local Storage");
+            dbStatusBadgeLabel.setForeground(Theme.WARNING);
+        }
+    }
+
+    public void updateRemindersCount() {
+        User u = UserSession.getInstance().getCurrentUser();
+        if (u == null) return;
+        try {
+            List<Reminder> active = reminderService.getActiveReminders(u.getId());
+            reminderBellLabel.setText(String.format("🔔 %d Reminder%s", active.size(), active.size() == 1 ? "" : "s"));
+        } catch (Exception ignored) {}
+    }
+
+    private void showRemindersDialog() {
+        User u = UserSession.getInstance().getCurrentUser();
+        if (u == null) return;
+
+        JDialog dialog = new JDialog(this, "Upcoming Reminders & In-App Alerts", true);
+        dialog.setSize(480, 420);
+        dialog.setLocationRelativeTo(this);
+        dialog.getContentPane().setBackground(Theme.BG_DARK);
+        dialog.setLayout(new BorderLayout(14, 14));
+
+        ModernCard container = new ModernCard(16);
+        container.setLayout(new BorderLayout(0, 10));
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+
+        try {
+            List<Reminder> reminders = reminderService.getActiveReminders(u.getId());
+            if (reminders.isEmpty()) {
+                JLabel empty = new JLabel("No active reminders scheduled.", SwingConstants.CENTER);
+                empty.setForeground(Theme.TEXT_MUTED);
+                listPanel.add(empty);
+            } else {
+                for (Reminder r : reminders) {
+                    JPanel rCard = new JPanel(new BorderLayout(8, 0));
+                    rCard.setBackground(Theme.BG_PANEL_ALT);
+                    rCard.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+
+                    JLabel text = new JLabel("<html><b>" + r.getTitle() + "</b> (" +
+                            r.getReminderTime().toString() + ")<br><span style='color:#94A3B8;'>" +
+                            r.getMessage() + "</span></html>");
+                    text.setForeground(Theme.TEXT_PRIMARY);
+                    rCard.add(text, BorderLayout.CENTER);
+
+                    NeonButton dismissBtn = new NeonButton("Dismiss", NeonButton.ButtonType.SECONDARY);
+                    dismissBtn.setFont(Theme.SMALL);
+                    dismissBtn.addActionListener(e -> {
+                        try {
+                            reminderService.dismissReminder(r.getId(), u.getId());
+                            dialog.dispose();
+                            showRemindersDialog();
+                            updateRemindersCount();
+                        } catch (Exception ignored) {}
+                    });
+                    rCard.add(dismissBtn, BorderLayout.EAST);
+                    listPanel.add(rCard);
+                    listPanel.add(Box.createVerticalStrut(6));
+                }
+            }
+        } catch (Exception ignored) {}
+
+        container.add(new JScrollPane(listPanel), BorderLayout.CENTER);
+
+        JPanel btnBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        btnBar.setOpaque(false);
+
+        NeonButton addRemBtn = new NeonButton("+ New Reminder", NeonButton.ButtonType.PRIMARY);
+        addRemBtn.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog(dialog, "Reminder Title:", "Workout Session");
+            if (title != null && !title.trim().isEmpty()) {
+                Reminder r = new Reminder(null, u.getId(), com.pgtr.model.ReminderType.WORKOUT,
+                        title.trim(), "Stay dedicated to your gains!", java.time.LocalTime.of(18, 0), true, false);
+                try {
+                    reminderService.createReminder(r);
+                    dialog.dispose();
+                    showRemindersDialog();
+                    updateRemindersCount();
+                } catch (Exception ignored) {}
+            }
+        });
+
+        NeonButton close = new NeonButton("Close", NeonButton.ButtonType.SECONDARY);
+        close.addActionListener(e -> dialog.dispose());
+
+        btnBar.add(addRemBtn);
+        btnBar.add(close);
+        container.add(btnBar, BorderLayout.SOUTH);
+
+        dialog.add(container, BorderLayout.CENTER);
+        dialog.setVisible(true);
+    }
+
+    private void handleLogout() {
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to sign out?",
+                "Sign Out", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            UserSession.getInstance().logout();
+            SwingUtilities.invokeLater(() -> {
+                LoginFrame login = new LoginFrame();
+                login.setVisible(true);
+                this.dispose();
+            });
+        }
+    }
+
+    public DashboardPanel getDashboardPanel() {
+        return dashboardPanel;
+    }
+}

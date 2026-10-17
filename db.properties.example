@@ -1,0 +1,14 @@
+# ==============================================================================
+# PERSONAL GAIN TRACKING SYSTEM (PGTR)
+# Environment Variables Example for Supabase Cloud PostgreSQL
+# ==============================================================================
+
+# Option 1: Set in your Operating System / Eclipse Run Configuration:
+# PGTR_DB_URL=jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require
+# PGTR_DB_USER=postgres
+# PGTR_DB_PASSWORD=YOUR_STRONG_DATABASE_PASSWORD
+
+# Option 2: Copy this file to 'db.properties' in the project root:
+db.url=jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require
+db.user=postgres
+db.password=YOUR_STRONG_DATABASE_PASSWORD
