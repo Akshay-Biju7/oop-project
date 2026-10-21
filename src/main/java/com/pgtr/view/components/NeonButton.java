@@ -8,12 +8,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * Modern button with custom painted rounded styling, neon green accents, and hover states.
+ * Modern button with custom painted rounded styling, neon cyan and gold accents, and hover states.
  */
 public class NeonButton extends JButton {
 
     public enum ButtonType {
         PRIMARY,
+        GOLD,
         SECONDARY,
         DANGER,
         OUTLINE
@@ -82,7 +83,11 @@ public class NeonButton extends JButton {
         switch (type) {
             case PRIMARY:
                 bg = pressed ? Theme.PRIMARY_HOVER.darker() : (hovered ? Theme.PRIMARY_HOVER : Theme.PRIMARY);
-                fg = Theme.BG_SIDEBAR; // High contrast dark text on bright lime
+                fg = Theme.BG_SIDEBAR; // High contrast dark text on bright cyan
+                break;
+            case GOLD:
+                bg = pressed ? Theme.GOLD_HOVER.darker() : (hovered ? Theme.GOLD_HOVER : Theme.GOLD);
+                fg = Theme.BG_SIDEBAR; // High contrast dark text on bright gold
                 break;
             case DANGER:
                 bg = pressed ? Theme.DANGER.darker() : (hovered ? Theme.DANGER : new Color(0x3B, 0x18, 0x18));

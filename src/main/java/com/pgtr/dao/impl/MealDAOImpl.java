@@ -5,6 +5,7 @@ import com.pgtr.database.DatabaseManager;
 import com.pgtr.model.FoodItem;
 import com.pgtr.model.Meal;
 import com.pgtr.model.MealType;
+import com.pgtr.util.DateUtil;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -177,7 +178,7 @@ public class MealDAOImpl implements MealDAO {
         }
         String timeStr = rs.getString("meal_time");
         if (timeStr != null) {
-            try { m.setMealTime(LocalTime.parse(timeStr.substring(0, 5))); } catch (Exception ignored) {}
+            try { m.setMealTime(DateUtil.parseTime(timeStr)); } catch (Exception ignored) {}
         }
         m.setMealType(MealType.fromString(rs.getString("meal_type")));
         m.setFoodName(rs.getString("food_name"));

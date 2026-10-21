@@ -28,6 +28,53 @@ public class DateUtil {
         return time.format(TIME_FORMATTER);
     }
 
+    /**
+     * Robustly parses various time strings (e.g. "08:00 AM", "01:30 PM", "1:30 pm", "13:30", "08:00")
+     * into a LocalTime object, accurately preserving morning vs evening.
+     */
+    public static LocalTime parseTime(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return LocalTime.now();
+        }
+        String clean = text.trim();
+
+        // 1. Try standard 12-hour AM/PM patterns
+        String[] patterns12 = {"hh:mm a", "h:mm a", "hh:mma", "h:mma"};
+        for (String pattern : patterns12) {
+            try {
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern, java.util.Locale.ENGLISH);
+                return LocalTime.parse(clean.toUpperCase(), dtf);
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Try 24-hour patterns
+        String[] patterns24 = {"HH:mm", "H:mm", "HH:mm:ss", "H:mm:ss"};
+        for (String pattern : patterns24) {
+            try {
+                DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern, java.util.Locale.ENGLISH);
+                return LocalTime.parse(clean, dtf);
+            } catch (Exception ignored) {}
+        }
+
+        // 3. Manual digit extraction fallback for non-standard inputs
+        try {
+            String upper = clean.toUpperCase();
+            boolean isPm = upper.contains("PM");
+            boolean isAm = upper.contains("AM");
+            String digits = upper.replaceAll("[^0-9:]", "").trim();
+            String[] parts = digits.split(":");
+            if (parts.length >= 2) {
+                int hour = Integer.parseInt(parts[0]);
+                int minute = Integer.parseInt(parts[1]);
+                if (isPm && hour < 12) hour += 12;
+                if (isAm && hour == 12) hour = 0;
+                return LocalTime.of(Math.min(23, Math.max(0, hour)), Math.min(59, Math.max(0, minute)));
+            }
+        } catch (Exception ignored) {}
+
+        return LocalTime.now();
+    }
+
     public static LocalDate getStartOfWeek(LocalDate date) {
         return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }

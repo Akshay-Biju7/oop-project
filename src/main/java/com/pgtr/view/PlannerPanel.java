@@ -17,14 +17,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Weekly Workout Routine Planner (Monday through Sunday split schedule).
+ * Weekly Workout Routine Planner supporting Cut Mode and Bulk Mode schedules.
  */
 public class PlannerPanel extends JPanel {
 
     private final MainFrame mainFrame;
     private final PlannerService plannerService;
 
+    private String currentMode = "BULK";
     private final Map<java.time.DayOfWeek, JPanel> dayCardsMap = new HashMap<>();
+
+    // Mode Switcher Buttons
+    private NeonButton cutModeBtn;
+    private NeonButton bulkModeBtn;
+    private JLabel modeTitleLabel;
 
     public PlannerPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
@@ -47,16 +53,35 @@ public class PlannerPanel extends JPanel {
         JLabel pageTitle = new JLabel("WEEKLY WORKOUT PLANNER");
         pageTitle.setFont(Theme.TITLE_LARGE);
         pageTitle.setForeground(Theme.TEXT_PRIMARY);
-        JLabel pageSub = new JLabel("Schedule your training splits, planned lifts, and rest days (Mon – Sun)");
-        pageSub.setFont(Theme.BODY);
-        pageSub.setForeground(Theme.TEXT_MUTED);
+        modeTitleLabel = new JLabel("Weekly split for " + currentMode + " Mode (Monday – Sunday)");
+        modeTitleLabel.setFont(Theme.BODY);
+        modeTitleLabel.setForeground(Theme.TEXT_MUTED);
         titleBlock.add(pageTitle);
-        titleBlock.add(pageSub);
+        titleBlock.add(modeTitleLabel);
         headerPanel.add(titleBlock, BorderLayout.WEST);
 
+        // Actions: Cut/Bulk Switcher + Reset
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+
+        cutModeBtn = new NeonButton("Cut Mode Plan", NeonButton.ButtonType.SECONDARY);
+        bulkModeBtn = new NeonButton("Bulk Mode Plan", NeonButton.ButtonType.GOLD);
+
+        cutModeBtn.addActionListener(e -> switchMode("CUT"));
+        bulkModeBtn.addActionListener(e -> switchMode("BULK"));
+
+        NeonButton resetBtn = new NeonButton("Reset to Default", NeonButton.ButtonType.SECONDARY);
+        resetBtn.addActionListener(e -> handleReset());
+
+        actions.add(new JLabel("Routine Phase:"));
+        actions.add(cutModeBtn);
+        actions.add(bulkModeBtn);
+        actions.add(resetBtn);
+
+        headerPanel.add(actions, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // Monday - Sunday Cards Grid (7 columns or 2 rows)
+        // Monday - Sunday Cards Grid (2 rows x 4 columns)
         JPanel grid = new JPanel(new GridLayout(2, 4, 14, 14));
         grid.setOpaque(false);
 
@@ -72,19 +97,20 @@ public class PlannerPanel extends JPanel {
             grid.add(dayPanel);
         }
 
-        // 8th slot in grid: Quick Tips / Recovery info card
+        // 8th slot in grid: Training Wisdom
         ModernCard tipCard = new ModernCard(16);
-        tipCard.setBackgroundColor(new Color(0x18, 0x20, 0x1A));
+        tipCard.setBackgroundColor(new Color(0x13, 0x1B, 0x2A));
+        tipCard.setBorderColor(Theme.BORDER);
         tipCard.setLayout(new BorderLayout(0, 8));
-        JLabel tipTitle = new JLabel("💡 TRAINING WISDOM");
+        JLabel tipTitle = new JLabel("💡 VYNTRIX TRAINING WISDOM");
         tipTitle.setFont(Theme.SUBTITLE);
         tipTitle.setForeground(Theme.PRIMARY);
         tipCard.add(tipTitle, BorderLayout.NORTH);
 
         JLabel tipBody = new JLabel("<html><body style='color:#94A3B8; font-size:11px;'>" +
-                "• Allow 48 hours before training the same muscle group again.<br><br>" +
-                "• Prioritize compound lifts (Squat, Bench, Deadlift) at the beginning of each session.<br><br>" +
-                "• Dedicate at least 1-2 days per week for active muscle recovery and CNS rest." +
+                "• <b>Cut Mode:</b> 45-60s rest periods. Compound volume preserves muscle during a deficit.<br><br>" +
+                "• <b>Bulk Mode:</b> 90-150s rest. Focus on mechanical tension and adding load or reps each week.<br><br>" +
+                "• Allow 48 hours before training the same muscle group again." +
                 "</body></html>");
         tipCard.add(tipBody, BorderLayout.CENTER);
         grid.add(tipCard);
@@ -96,6 +122,31 @@ public class PlannerPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    private void switchMode(String mode) {
+        this.currentMode = mode.toUpperCase();
+        modeTitleLabel.setText("Weekly split for " + currentMode + " Mode (Monday – Sunday)");
+        if ("CUT".equalsIgnoreCase(currentMode)) {
+            cutModeBtn.setBackground(Theme.PRIMARY);
+        }
+        refreshPlanner();
+    }
+
+    private void handleReset() {
+        User user = UserSession.getInstance().getCurrentUser();
+        if (user == null) return;
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Reset " + currentMode + " Mode weekly schedule to default recommended split?",
+                "Reset Routine", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                plannerService.resetToDefault(user.getId(), currentMode);
+                refreshPlanner();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private JPanel createDayCard(java.time.DayOfWeek day) {
         ModernCard card = new ModernCard(14);
         card.setLayout(new BorderLayout(0, 8));
@@ -103,7 +154,7 @@ public class PlannerPanel extends JPanel {
         boolean isToday = java.time.LocalDate.now().getDayOfWeek() == day;
         if (isToday) {
             card.setBorderColor(Theme.PRIMARY);
-            card.setBackgroundColor(new Color(0x1B, 0x22, 0x1C));
+            card.setBackgroundColor(new Color(0x13, 0x22, 0x2E));
         }
 
         // Header
@@ -137,7 +188,7 @@ public class PlannerPanel extends JPanel {
         SwingWorker<List<WorkoutPlan>, Void> worker = new SwingWorker<>() {
             @Override
             protected List<WorkoutPlan> doInBackground() throws Exception {
-                return plannerService.getWeeklySchedule(user.getId());
+                return plannerService.getWeeklySchedule(user.getId(), currentMode);
             }
 
             @Override
@@ -175,20 +226,31 @@ public class PlannerPanel extends JPanel {
                                 mGroup.setForeground(Theme.PRIMARY);
                                 body.add(mGroup);
 
-                                if (p.getScheduledTime() != null) {
-                                    JLabel time = new JLabel("Time: " + p.getScheduledTime().toString());
-                                    time.setFont(Theme.SMALL);
-                                    time.setForeground(Theme.TEXT_MUTED);
-                                    body.add(time);
-                                }
+                                JLabel restLabel = new JLabel("Rest: " + p.getRestSeconds() + "s | Cardio: " + p.getCardio());
+                                restLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                                restLabel.setForeground(Theme.GOLD);
+                                body.add(restLabel);
 
                                 if (p.getPlannedExercises() != null && !p.getPlannedExercises().isEmpty()) {
-                                    JLabel ex = new JLabel("<html><body style='width:120px; color:#94A3B8; font-size:10px;'>" +
+                                    JLabel ex = new JLabel("<html><body style='width:125px; color:#94A3B8; font-size:10px;'>" +
                                             p.getPlannedExercises() + "</body></html>");
                                     body.add(ex);
                                 }
+
+                                JCheckBox doneCheck = new JCheckBox("Completed", p.isCompleted());
+                                doneCheck.setFont(Theme.SMALL);
+                                doneCheck.setForeground(p.isCompleted() ? Theme.SUCCESS : Theme.TEXT_MUTED);
+                                doneCheck.setOpaque(false);
+                                doneCheck.addActionListener(e -> {
+                                    try {
+                                        plannerService.setPlanCompleted(p.getId(), user.getId(), doneCheck.isSelected());
+                                        refreshPlanner();
+                                    } catch (Exception ignored) {}
+                                });
+                                body.add(doneCheck);
+
                             } else {
-                                JLabel rest = new JLabel("🏖️ Rest / Unscheduled");
+                                JLabel rest = new JLabel("🏖️ Active Rest / Recovery");
                                 rest.setFont(Theme.BODY);
                                 rest.setForeground(Theme.TEXT_DIM);
                                 body.add(rest);
@@ -209,8 +271,8 @@ public class PlannerPanel extends JPanel {
         User user = UserSession.getInstance().getCurrentUser();
         if (user == null) return;
 
-        JDialog dialog = new JDialog(mainFrame, "Schedule Routine for " + day.name(), true);
-        dialog.setSize(480, 420);
+        JDialog dialog = new JDialog(mainFrame, "Schedule " + currentMode + " Mode Routine for " + day.name(), true);
+        dialog.setSize(520, 500);
         dialog.setLocationRelativeTo(mainFrame);
         dialog.getContentPane().setBackground(Theme.BG_DARK);
         dialog.setLayout(new BorderLayout(14, 14));
@@ -219,15 +281,27 @@ public class PlannerPanel extends JPanel {
         container.setLayout(new GridLayout(0, 1, 0, 10));
 
         JTextField nameField = new JTextField("Push Day");
-        JComboBox<String> muscleCombo = new JComboBox<>(new String[]{"Chest & Triceps", "Back & Biceps", "Legs & Core", "Shoulders & Arms", "Full Body", "Active Rest", "Cardio & Mobility"});
+        JComboBox<String> muscleCombo = new JComboBox<>(new String[]{
+                "Chest & Triceps", "Back & Biceps", "Legs & Core", "Shoulders & Traps",
+                "Upper Body", "Full Body", "Active Rest", "Cardio & Mobility"
+        });
         JTextField exercisesField = new JTextField("Bench Press 4x8, Shoulder Press 3x10, Incline DB 3x10");
+        JSpinner restSpinner = new JSpinner(new SpinnerNumberModel("CUT".equalsIgnoreCase(currentMode) ? 60 : 120, 15, 300, 15));
+        JTextField cardioField = new JTextField("CUT".equalsIgnoreCase(currentMode) ? "15 min Incline Treadmill" : "None");
         JTextField timeField = new JTextField("18:00");
         JTextField notesField = new JTextField("Warmup rotator cuffs first");
 
         container.add(wrapField("WORKOUT ROUTINE NAME", nameField));
         container.add(wrapField("TARGET MUSCLE GROUP", muscleCombo));
         container.add(wrapField("PLANNED EXERCISES", exercisesField));
-        container.add(wrapField("SCHEDULED TIME (HH:MM)", timeField));
+
+        JPanel splitRow = new JPanel(new GridLayout(1, 2, 10, 0));
+        splitRow.setOpaque(false);
+        splitRow.add(wrapField("REST DURATION (SECONDS)", restSpinner));
+        splitRow.add(wrapField("SCHEDULED TIME (HH:MM)", timeField));
+        container.add(splitRow);
+
+        container.add(wrapField("OPTIONAL CARDIO", cardioField));
         container.add(wrapField("NOTES", notesField));
 
         JPanel btnBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -239,7 +313,7 @@ public class PlannerPanel extends JPanel {
         NeonButton clear = new NeonButton("Set As Rest Day", NeonButton.ButtonType.DANGER);
         clear.addActionListener(e -> {
             try {
-                plannerService.deletePlan(day.name(), user.getId());
+                plannerService.deletePlanForDay(user.getId(), currentMode, day);
                 dialog.dispose();
                 refreshPlanner();
             } catch (Exception ex) {
@@ -252,18 +326,23 @@ public class PlannerPanel extends JPanel {
             try {
                 WorkoutPlan plan = new WorkoutPlan();
                 plan.setUserId(user.getId());
+                plan.setPlanMode(currentMode);
                 plan.setDayOfWeek(day);
                 plan.setWorkoutName(nameField.getText().trim());
                 plan.setMuscleGroup((String) muscleCombo.getSelectedItem());
                 plan.setPlannedExercises(exercisesField.getText().trim());
+                plan.setRestSeconds(((Number) restSpinner.getValue()).intValue());
+                plan.setCardio(cardioField.getText().trim());
                 try { plan.setScheduledTime(LocalTime.parse(timeField.getText().trim())); } catch (Exception ignored) {}
                 plan.setNotes(notesField.getText().trim());
                 plan.setActive(true);
+                plan.setCompleted(false);
 
                 plannerService.savePlan(plan);
                 dialog.dispose();
                 refreshPlanner();
-                JOptionPane.showMessageDialog(mainFrame, "Schedule updated for " + day.name() + "!", "Saved", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(mainFrame, "Schedule updated for " + day.name() + " (" + currentMode + " Mode)!",
+                        "Saved", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog, "Error saving schedule: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }

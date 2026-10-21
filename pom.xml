@@ -9,8 +9,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Personal Gain Tracking System</name>
-    <description>A desktop fitness, nutrition, and personal gain tracking application built with Java Swing and Supabase PostgreSQL</description>
+    <name>Vyntrix — Fitness &amp; Personal Gain Tracking App</name>
+    <description>A desktop fitness, nutrition, cut/bulk workout planning, and personal gain tracking application built with Java Swing and Supabase PostgreSQL</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

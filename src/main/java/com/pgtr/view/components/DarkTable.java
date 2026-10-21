@@ -30,7 +30,7 @@ public class DarkTable extends JTable {
         getTableHeader().setFont(Theme.BODY_BOLD);
         getTableHeader().setPreferredSize(new Dimension(0, 36));
 
-        // Default Alternating Cell Renderer
+        // Default Alternating Cell Renderer for Text & Objects
         setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -45,6 +45,36 @@ public class DarkTable extends JTable {
                 return c;
             }
         });
+
+        // Dedicated Boolean Checkbox Renderer for Dark Theme
+        setDefaultRenderer(Boolean.class, new javax.swing.table.TableCellRenderer() {
+            private final JCheckBox checkBox = new JCheckBox();
+            {
+                checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+                checkBox.setOpaque(true);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus,
+                                                           int row, int column) {
+                checkBox.setSelected(Boolean.TRUE.equals(value));
+                if (isSelected) {
+                    checkBox.setBackground(table.getSelectionBackground());
+                    checkBox.setForeground(table.getSelectionForeground());
+                } else {
+                    checkBox.setBackground(row % 2 == 0 ? Theme.BG_PANEL : Theme.BG_PANEL_ALT);
+                    checkBox.setForeground(Theme.TEXT_PRIMARY);
+                }
+                return checkBox;
+            }
+        });
+
+        // Boolean Checkbox Editor
+        JCheckBox editorCheckBox = new JCheckBox();
+        editorCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
+        editorCheckBox.setOpaque(true);
+        setDefaultEditor(Boolean.class, new DefaultCellEditor(editorCheckBox));
     }
 
     public static JScrollPane createScrollPane(JTable table) {

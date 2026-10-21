@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Primary application window featuring a dark charcoal sidebar, top navigation bar,
- * live workout streak indicator, notification reminders bell, and dynamic CardLayout views.
+ * Primary Vyntrix application window featuring official branding, futuristic sidebar,
+ * top navigation bar, live streak counter, in-app alerts, and dynamic view switching.
  */
 public class MainFrame extends JFrame {
 
@@ -45,20 +45,22 @@ public class MainFrame extends JFrame {
     private JLabel reminderBellLabel;
     private JLabel userProfileNameLabel;
 
-    // Sidebar button references for active highlighting
+    // Sidebar button references
     private final Map<String, JButton> navButtonsMap = new HashMap<>();
 
     public MainFrame(User initialUser) {
-        super("Personal Gain Tracking System — Dashboard");
+        super("Vyntrix — Fitness & Personal Gain Tracking App");
         this.reminderService = new ReminderService();
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1280, 820);
-        setMinimumSize(new Dimension(1024, 680));
+        setSize(1320, 840);
+        setMinimumSize(new Dimension(1080, 700));
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         getContentPane().setBackground(Theme.BG_DARK);
         setLayout(new BorderLayout());
+
+        Theme.setWindowIcon(this);
 
         // Left Sidebar Navigation
         JPanel sidebar = createSidebar();
@@ -89,24 +91,34 @@ public class MainFrame extends JFrame {
 
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout());
-        sidebar.setPreferredSize(new Dimension(240, 0));
+        sidebar.setPreferredSize(new Dimension(250, 0));
         sidebar.setBackground(Theme.BG_SIDEBAR);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.BORDER));
 
-        // Top Brand Logo
-        JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 20));
+        // Top Brand Logo Block
+        JPanel brandPanel = new JPanel(new BorderLayout(10, 0));
         brandPanel.setOpaque(false);
+        brandPanel.setBorder(BorderFactory.createEmptyBorder(20, 18, 20, 18));
 
-        JLabel logoIcon = new JLabel("⚡");
-        logoIcon.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        logoIcon.setForeground(Theme.PRIMARY);
+        ImageIcon smallLogo = Theme.getAppLogo(42, 42);
+        JLabel logoIcon = new JLabel(smallLogo != null ? smallLogo : new ImageIcon());
+        brandPanel.add(logoIcon, BorderLayout.WEST);
 
-        JLabel brandText = new JLabel("PGTR FITNESS");
-        brandText.setFont(Theme.TITLE);
+        JPanel textBlock = new JPanel(new GridLayout(2, 1, 0, 2));
+        textBlock.setOpaque(false);
+
+        JLabel brandText = new JLabel("VYNTRIX");
+        brandText.setFont(new Font("Segoe UI", Font.BOLD, 20));
         brandText.setForeground(Theme.TEXT_PRIMARY);
 
-        brandPanel.add(logoIcon);
-        brandPanel.add(brandText);
+        JLabel tagText = new JLabel("REDEFINE YOUR LIMITS");
+        tagText.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        tagText.setForeground(Theme.GOLD);
+
+        textBlock.add(brandText);
+        textBlock.add(tagText);
+        brandPanel.add(textBlock, BorderLayout.CENTER);
+
         sidebar.add(brandPanel, BorderLayout.NORTH);
 
         // Center Navigation Menu
@@ -115,14 +127,9 @@ public class MainFrame extends JFrame {
         navMenu.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         addNavItem(navMenu, "DASHBOARD", "📊  Dashboard");
-        addNavItem(navMenu, "WORKOUTS", "🏋️  Gym & Workouts");
-        addNavItem(navMenu, "NUTRITION", "🥗  Nutrition & Macros");
-        addNavItem(navMenu, "HEALTH", "📏  Health & Metrics");
-        addNavItem(navMenu, "HABITS", "💧  Water & Sleep");
-        addNavItem(navMenu, "GOALS", "🎯  Goals & Badges");
-        addNavItem(navMenu, "PLANNER", "📅  Weekly Planner");
-        addNavItem(navMenu, "REPORTS", "📈  Progress Reports");
-        addNavItem(navMenu, "SETTINGS", "⚙️  Settings & DB");
+        addNavItem(navMenu, "WORKOUTS", "🏋️  Gym Workouts");
+        addNavItem(navMenu, "NUTRITION", "🥗  Nutrition & Water");
+        addNavItem(navMenu, "SETTINGS", "👤  Profile & Health");
 
         sidebar.add(navMenu, BorderLayout.CENTER);
 
@@ -138,9 +145,9 @@ public class MainFrame extends JFrame {
         userProfileNameLabel.setFont(Theme.BODY_BOLD);
         userProfileNameLabel.setForeground(Theme.TEXT_PRIMARY);
 
-        JLabel roleLabel = new JLabel("Gym Pro Edition");
+        JLabel roleLabel = new JLabel("Vyntrix Athlete Pro");
         roleLabel.setFont(Theme.SMALL);
-        roleLabel.setForeground(Theme.TEXT_MUTED);
+        roleLabel.setForeground(Theme.PRIMARY);
 
         userCard.add(userProfileNameLabel);
         userCard.add(roleLabel);
@@ -182,7 +189,7 @@ public class MainFrame extends JFrame {
         // Left Title
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 24, 16));
         left.setOpaque(false);
-        currentViewTitleLabel = new JLabel("Dashboard Overview");
+        currentViewTitleLabel = new JLabel("Vyntrix Fitness Dashboard");
         currentViewTitleLabel.setFont(Theme.TITLE);
         currentViewTitleLabel.setForeground(Theme.TEXT_PRIMARY);
         left.add(currentViewTitleLabel);
@@ -195,7 +202,7 @@ public class MainFrame extends JFrame {
         // Streak Badge Pill
         streakBadgeLabel = new JLabel("🔥 0 Day Streak", SwingConstants.CENTER);
         streakBadgeLabel.setFont(Theme.BODY_BOLD);
-        streakBadgeLabel.setForeground(Theme.WARNING);
+        streakBadgeLabel.setForeground(Theme.GOLD);
         streakBadgeLabel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.BORDER),
                 BorderFactory.createEmptyBorder(4, 10, 4, 10)
@@ -255,20 +262,39 @@ public class MainFrame extends JFrame {
         goalsPanel = new GoalsPanel(this);
         plannerPanel = new PlannerPanel(this);
         reportsPanel = new ReportsPanel(this);
-        settingsPanel = new SettingsPanel(this);
+        settingsPanel = new SettingsPanel(this, healthPanel, reportsPanel);
 
         contentCardsPanel.add(dashboardPanel, "DASHBOARD");
         contentCardsPanel.add(workoutPanel, "WORKOUTS");
         contentCardsPanel.add(nutritionPanel, "NUTRITION");
-        contentCardsPanel.add(healthPanel, "HEALTH");
-        contentCardsPanel.add(habitsPanel, "HABITS");
-        contentCardsPanel.add(goalsPanel, "GOALS");
-        contentCardsPanel.add(plannerPanel, "PLANNER");
-        contentCardsPanel.add(reportsPanel, "REPORTS");
         contentCardsPanel.add(settingsPanel, "SETTINGS");
     }
 
     public void showView(String viewKey) {
+        // Smooth redirects for migrated modules
+        if ("HEALTH".equals(viewKey)) {
+            showView("SETTINGS");
+            settingsPanel.selectTab("HEALTH");
+            return;
+        }
+        if ("REPORTS".equals(viewKey)) {
+            showView("SETTINGS");
+            settingsPanel.selectTab("REPORTS");
+            return;
+        }
+        if ("GOALS".equals(viewKey)) {
+            showView("WORKOUTS");
+            return;
+        }
+        if ("PLANNER".equals(viewKey)) {
+            showView("WORKOUTS");
+            return;
+        }
+        if ("HABITS".equals(viewKey)) {
+            showView("NUTRITION");
+            return;
+        }
+
         cardLayout.show(contentCardsPanel, viewKey);
 
         // Update active sidebar button visual
@@ -276,7 +302,7 @@ public class MainFrame extends JFrame {
             boolean active = entry.getKey().equals(viewKey);
             JButton b = entry.getValue();
             if (active) {
-                b.setBackground(new Color(0x18, 0x22, 0x1A));
+                b.setBackground(new Color(0x13, 0x22, 0x2E));
                 b.setForeground(Theme.PRIMARY);
                 b.setFont(Theme.BODY_BOLD);
                 b.setBorder(BorderFactory.createMatteBorder(0, 4, 0, 0, Theme.PRIMARY));
@@ -291,39 +317,19 @@ public class MainFrame extends JFrame {
         // Trigger on-navigate refresh
         switch (viewKey) {
             case "DASHBOARD":
-                currentViewTitleLabel.setText("Fitness Dashboard & Daily Overview");
+                currentViewTitleLabel.setText("Vyntrix Dashboard Overview & Daily Metrics");
                 dashboardPanel.refreshDashboard();
                 break;
             case "WORKOUTS":
-                currentViewTitleLabel.setText("Gym Workout Logger & Timers");
+                currentViewTitleLabel.setText("Gym Workouts — Cut & Bulk Modes");
                 workoutPanel.refreshWorkouts();
                 break;
             case "NUTRITION":
-                currentViewTitleLabel.setText("Daily Nutrition, Macros & Food Logs");
+                currentViewTitleLabel.setText("Nutrition Engine & Daily Hydration Tracking");
                 nutritionPanel.refreshNutrition();
                 break;
-            case "HEALTH":
-                currentViewTitleLabel.setText("Health Metrics, Body Measurements & BMI");
-                healthPanel.refreshHealth();
-                break;
-            case "HABITS":
-                currentViewTitleLabel.setText("Hydration Intake & Sleep Recovery");
-                habitsPanel.refreshHabits();
-                break;
-            case "GOALS":
-                currentViewTitleLabel.setText("Personal Gain Goals & Trophy Case");
-                goalsPanel.refreshGoals();
-                break;
-            case "PLANNER":
-                currentViewTitleLabel.setText("Weekly Training Schedule (Mon – Sun)");
-                plannerPanel.refreshPlanner();
-                break;
-            case "REPORTS":
-                currentViewTitleLabel.setText("Progress Analysis, Trend Charts & Exports");
-                reportsPanel.refreshReports();
-                break;
             case "SETTINGS":
-                currentViewTitleLabel.setText("Profile Settings & Database Connection");
+                currentViewTitleLabel.setText("Athlete Profile, Health Metrics & Reports");
                 settingsPanel.loadProfile();
                 break;
         }
@@ -348,7 +354,7 @@ public class MainFrame extends JFrame {
             dbStatusBadgeLabel.setForeground(Theme.PRIMARY);
         } else {
             dbStatusBadgeLabel.setText("● Local Storage");
-            dbStatusBadgeLabel.setForeground(Theme.WARNING);
+            dbStatusBadgeLabel.setForeground(Theme.GOLD);
         }
     }
 
@@ -445,7 +451,7 @@ public class MainFrame extends JFrame {
     }
 
     private void handleLogout() {
-        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to sign out?",
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to sign out of Vyntrix?",
                 "Sign Out", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             UserSession.getInstance().logout();
@@ -459,5 +465,25 @@ public class MainFrame extends JFrame {
 
     public DashboardPanel getDashboardPanel() {
         return dashboardPanel;
+    }
+
+    public NutritionPanel getNutritionPanel() {
+        return nutritionPanel;
+    }
+
+    public WorkoutPanel getWorkoutPanel() {
+        return workoutPanel;
+    }
+
+    public SettingsPanel getSettingsPanel() {
+        return settingsPanel;
+    }
+
+    public HealthPanel getHealthPanel() {
+        return healthPanel;
+    }
+
+    public ReportsPanel getReportsPanel() {
+        return reportsPanel;
     }
 }

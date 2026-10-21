@@ -296,13 +296,34 @@ public class DatabaseManager {
             "CREATE TABLE IF NOT EXISTS workout_plans (" +
                 "id TEXT PRIMARY KEY, " +
                 "user_id TEXT NOT NULL, " +
+                "plan_mode TEXT DEFAULT 'BULK', " +
                 "day_of_week TEXT NOT NULL, " +
                 "workout_name TEXT NOT NULL, " +
                 "muscle_group TEXT NOT NULL, " +
                 "planned_exercises TEXT, " +
+                "rest_seconds INTEGER DEFAULT 90, " +
+                "cardio TEXT, " +
                 "scheduled_time TEXT, " +
                 "notes TEXT, " +
                 "is_active INTEGER DEFAULT 1, " +
+                "is_completed INTEGER DEFAULT 0, " +
+                "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)",
+
+            "CREATE TABLE IF NOT EXISTS nutrition_plans (" +
+                "id TEXT PRIMARY KEY, " +
+                "user_id TEXT NOT NULL, " +
+                "plan_mode TEXT NOT NULL DEFAULT 'BULK', " +
+                "meal_type TEXT NOT NULL, " +
+                "food_name TEXT NOT NULL, " +
+                "serving_size TEXT, " +
+                "calories REAL DEFAULT 0, " +
+                "protein_g REAL DEFAULT 0, " +
+                "carbs_g REAL DEFAULT 0, " +
+                "fat_g REAL DEFAULT 0, " +
+                "meal_time TEXT, " +
+                "notes TEXT, " +
+                "is_consumed INTEGER DEFAULT 0, " +
+                "created_at TEXT, " +
                 "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)",
 
             "CREATE TABLE IF NOT EXISTS reminders (" +
@@ -337,6 +358,18 @@ public class DatabaseManager {
         try (Statement st = conn.createStatement()) {
             for (String sql : sqliteDDL) {
                 st.execute(sql);
+            }
+            // Dynamic column migrations for existing SQLite databases
+            String[] migrations = {
+                "ALTER TABLE workout_plans ADD COLUMN plan_mode TEXT DEFAULT 'BULK'",
+                "ALTER TABLE workout_plans ADD COLUMN rest_seconds INTEGER DEFAULT 90",
+                "ALTER TABLE workout_plans ADD COLUMN cardio TEXT",
+                "ALTER TABLE workout_plans ADD COLUMN is_completed INTEGER DEFAULT 0"
+            };
+            for (String mig : migrations) {
+                try {
+                    st.execute(mig);
+                } catch (SQLException ignored) {}
             }
             seedInitialData(conn);
         } catch (SQLException e) {

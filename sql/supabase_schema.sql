@@ -164,20 +164,44 @@ CREATE TABLE IF NOT EXISTS fitness_goals (
 
 CREATE INDEX IF NOT EXISTS idx_goals_user ON fitness_goals(user_id, status);
 
--- 11. WORKOUT PLANS TABLE
+-- 11. WORKOUT PLANS TABLE (CUT & BULK MODES)
 CREATE TABLE IF NOT EXISTS workout_plans (
     id VARCHAR(64) PRIMARY KEY,
     user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_mode VARCHAR(20) DEFAULT 'BULK', -- 'CUT' or 'BULK'
     day_of_week VARCHAR(20) NOT NULL, -- 'MONDAY', 'TUESDAY', ...
     workout_name VARCHAR(150) NOT NULL,
     muscle_group VARCHAR(100) NOT NULL,
     planned_exercises TEXT,
+    rest_seconds INT DEFAULT 90,
+    cardio VARCHAR(150),
     scheduled_time TIME,
     notes TEXT,
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    is_completed INT DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_plans_user_day ON workout_plans(user_id, day_of_week);
+CREATE INDEX IF NOT EXISTS idx_plans_user_mode ON workout_plans(user_id, plan_mode, day_of_week);
+
+-- 12. NUTRITION PLANS TABLE (CUT & BULK MODES)
+CREATE TABLE IF NOT EXISTS nutrition_plans (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_mode VARCHAR(20) NOT NULL DEFAULT 'BULK', -- 'CUT' or 'BULK'
+    meal_type VARCHAR(50) NOT NULL, -- 'BREAKFAST', 'MID_MORNING', 'LUNCH', 'EVENING_SNACK', 'DINNER', 'POST_WORKOUT'
+    food_name VARCHAR(150) NOT NULL,
+    serving_size VARCHAR(100),
+    calories NUMERIC(7,2) DEFAULT 0,
+    protein_g NUMERIC(6,2) DEFAULT 0,
+    carbs_g NUMERIC(6,2) DEFAULT 0,
+    fat_g NUMERIC(6,2) DEFAULT 0,
+    meal_time VARCHAR(20),
+    notes TEXT,
+    is_consumed INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_nutrition_plans_user_mode ON nutrition_plans(user_id, plan_mode);
 
 -- 12. REMINDERS TABLE
 CREATE TABLE IF NOT EXISTS reminders (

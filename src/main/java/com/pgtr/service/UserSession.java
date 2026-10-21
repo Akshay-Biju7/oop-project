@@ -12,6 +12,7 @@ public class UserSession {
 
     private static UserSession instance;
     private User currentUser;
+    private String activeNutritionMode = null;
     private final List<Consumer<User>> sessionListeners = new ArrayList<>();
 
     private UserSession() {}
@@ -36,8 +37,26 @@ public class UserSession {
         return currentUser != null;
     }
 
+    public synchronized String getActiveNutritionMode() {
+        if (activeNutritionMode != null && !activeNutritionMode.trim().isEmpty()) {
+            return activeNutritionMode;
+        }
+        if (currentUser != null && currentUser.getFitnessGoal() != null) {
+            String g = currentUser.getFitnessGoal().name();
+            if (g.contains("LOSS") || g.contains("CUT")) {
+                return "CUT";
+            }
+        }
+        return "BULK";
+    }
+
+    public synchronized void setActiveNutritionMode(String mode) {
+        this.activeNutritionMode = (mode != null && !mode.trim().isEmpty()) ? mode.trim().toUpperCase() : "BULK";
+    }
+
     public synchronized void logout() {
         this.currentUser = null;
+        this.activeNutritionMode = null;
         notifyListeners();
     }
 

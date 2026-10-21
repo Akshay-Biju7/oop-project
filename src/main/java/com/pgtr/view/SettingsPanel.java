@@ -21,6 +21,16 @@ public class SettingsPanel extends JPanel {
 
     private final MainFrame mainFrame;
     private final AuthService authService;
+    private final HealthPanel healthPanel;
+    private final ReportsPanel reportsPanel;
+
+    // Sub-tab Navigation
+    private CardLayout tabCardLayout;
+    private JPanel tabCardsPanel;
+    private JButton profileTabBtn;
+    private JButton healthTabBtn;
+    private JButton reportsTabBtn;
+    private String activeTab = "PROFILE";
 
     // Profile Fields
     private JTextField nameField;
@@ -43,37 +53,130 @@ public class SettingsPanel extends JPanel {
     private JPasswordField dbPassField;
 
     public SettingsPanel(MainFrame mainFrame) {
+        this(mainFrame, new HealthPanel(mainFrame), new ReportsPanel(mainFrame));
+    }
+
+    public SettingsPanel(MainFrame mainFrame, HealthPanel healthPanel, ReportsPanel reportsPanel) {
         this.mainFrame = mainFrame;
         this.authService = new AuthService();
+        this.healthPanel = healthPanel != null ? healthPanel : new HealthPanel(mainFrame);
+        this.reportsPanel = reportsPanel != null ? reportsPanel : new ReportsPanel(mainFrame);
 
         setOpaque(false);
-        setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(20, 24, 24, 24));
+        setLayout(new BorderLayout(0, 14));
+        setBorder(BorderFactory.createEmptyBorder(16, 20, 20, 20));
 
         initComponents();
     }
 
     private void initComponents() {
-        JPanel scrollContainer = new JPanel();
-        scrollContainer.setLayout(new BoxLayout(scrollContainer, BoxLayout.Y_AXIS));
-        scrollContainer.setOpaque(false);
+        // Top Container: Header + Sub-tab Switcher Bar
+        JPanel topContainer = new JPanel(new BorderLayout(0, 12));
+        topContainer.setOpaque(false);
 
-        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
         JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 2));
         titleBlock.setOpaque(false);
-        JLabel pageTitle = new JLabel("SETTINGS & PROFILE MANAGEMENT");
+        JLabel pageTitle = new JLabel("ATHLETE PROFILE & HEALTH HUB");
         pageTitle.setFont(Theme.TITLE_LARGE);
         pageTitle.setForeground(Theme.TEXT_PRIMARY);
-        JLabel pageSub = new JLabel("Manage your physical metrics, macronutrient targets, and database connection");
+        JLabel pageSub = new JLabel("Manage personal credentials, physical body measurements, BMI analysis, and performance reports");
         pageSub.setFont(Theme.BODY);
         pageSub.setForeground(Theme.TEXT_MUTED);
         titleBlock.add(pageTitle);
         titleBlock.add(pageSub);
         headerPanel.add(titleBlock, BorderLayout.WEST);
-        scrollContainer.add(headerPanel);
-        scrollContainer.add(Box.createVerticalStrut(16));
+        topContainer.add(headerPanel, BorderLayout.NORTH);
+
+        // Sub-tabs Segmented Button Bar
+        JPanel tabBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        tabBar.setOpaque(false);
+
+        profileTabBtn = createTabButton("👤  Athlete Profile & Settings", "PROFILE");
+        healthTabBtn = createTabButton("📏  Health Metrics & Measurements", "HEALTH");
+        reportsTabBtn = createTabButton("📈  Progress Reports & Analytics", "REPORTS");
+
+        tabBar.add(profileTabBtn);
+        tabBar.add(healthTabBtn);
+        tabBar.add(reportsTabBtn);
+        topContainer.add(tabBar, BorderLayout.SOUTH);
+
+        add(topContainer, BorderLayout.NORTH);
+
+        // Center Container: CardLayout for Sub-Tabs
+        tabCardLayout = new CardLayout();
+        tabCardsPanel = new JPanel(tabCardLayout);
+        tabCardsPanel.setOpaque(false);
+
+        // 1. Profile & Settings Tab
+        JPanel profileTab = createProfileSettingsTab();
+        tabCardsPanel.add(profileTab, "PROFILE");
+
+        // 2. Health Metrics Tab
+        tabCardsPanel.add(healthPanel, "HEALTH");
+
+        // 3. Progress Reports Tab
+        tabCardsPanel.add(reportsPanel, "REPORTS");
+
+        add(tabCardsPanel, BorderLayout.CENTER);
+
+        selectTab("PROFILE");
+    }
+
+    private JButton createTabButton(String text, String key) {
+        JButton btn = new JButton(text);
+        btn.setFont(Theme.BODY_BOLD);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(true);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> selectTab(key));
+        return btn;
+    }
+
+    public void selectTab(String key) {
+        this.activeTab = key;
+        tabCardLayout.show(tabCardsPanel, key);
+        updateTabButtonStyles();
+
+        if ("PROFILE".equals(key)) {
+            loadProfile();
+        } else if ("HEALTH".equals(key)) {
+            healthPanel.refreshHealth();
+        } else if ("REPORTS".equals(key)) {
+            reportsPanel.refreshReports();
+        }
+    }
+
+    private void updateTabButtonStyles() {
+        styleButton(profileTabBtn, "PROFILE".equals(activeTab));
+        styleButton(healthTabBtn, "HEALTH".equals(activeTab));
+        styleButton(reportsTabBtn, "REPORTS".equals(activeTab));
+    }
+
+    private void styleButton(JButton btn, boolean active) {
+        if (active) {
+            btn.setBackground(new Color(0x13, 0x22, 0x2E));
+            btn.setForeground(Theme.PRIMARY);
+            btn.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 3, 0, Theme.PRIMARY),
+                    BorderFactory.createEmptyBorder(8, 16, 7, 16)
+            ));
+        } else {
+            btn.setBackground(Theme.BG_PANEL);
+            btn.setForeground(Theme.TEXT_MUTED);
+            btn.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Theme.BORDER),
+                    BorderFactory.createEmptyBorder(8, 16, 8, 16)
+            ));
+        }
+    }
+
+    private JPanel createProfileSettingsTab() {
+        JPanel scrollContainer = new JPanel();
+        scrollContainer.setLayout(new BoxLayout(scrollContainer, BoxLayout.Y_AXIS));
+        scrollContainer.setOpaque(false);
 
         // 1. Personal Profile Card
         ModernCard profileCard = createProfileCard();
@@ -95,7 +198,18 @@ public class SettingsPanel extends JPanel {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        add(scrollPane, BorderLayout.CENTER);
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(scrollPane, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    public HealthPanel getHealthPanel() {
+        return healthPanel;
+    }
+
+    public ReportsPanel getReportsPanel() {
+        return reportsPanel;
     }
 
     private ModernCard createProfileCard() {

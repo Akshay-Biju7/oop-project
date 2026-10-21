@@ -4,7 +4,6 @@ import com.pgtr.model.ActivityLevel;
 import com.pgtr.model.FitnessGoalType;
 import com.pgtr.model.User;
 import com.pgtr.service.AuthService;
-import com.pgtr.service.UserSession;
 import com.pgtr.util.Theme;
 import com.pgtr.view.components.ModernCard;
 import com.pgtr.view.components.NeonButton;
@@ -13,7 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Modern authentication window with seamless Sign In and Register cards.
+ * Modern Vyntrix authentication window with Sign In and Registration cards.
+ * Features official logo, clean commercial fitness styling, and show/hide password toggle.
  */
 public class LoginFrame extends JFrame {
 
@@ -24,6 +24,7 @@ public class LoginFrame extends JFrame {
     // Sign In Fields
     private JTextField loginEmailField;
     private JPasswordField loginPasswordField;
+    private JToggleButton showPasswordToggle;
     private JLabel loginErrorLabel;
 
     // Register Fields
@@ -39,21 +40,19 @@ public class LoginFrame extends JFrame {
     private JLabel regErrorLabel;
 
     public LoginFrame() {
-        super("Personal Gain Tracking System — Authentication");
+        super("Vyntrix — Authentication");
         this.authService = new AuthService();
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(960, 680);
-        setMinimumSize(new Dimension(850, 600));
+        setSize(920, 680);
+        setMinimumSize(new Dimension(820, 620));
         setLocationRelativeTo(null);
         getContentPane().setBackground(Theme.BG_DARK);
         setLayout(new BorderLayout());
 
-        // Left Branding Banner
-        JPanel brandBanner = createBrandingPanel();
-        add(brandBanner, BorderLayout.WEST);
+        Theme.setWindowIcon(this);
 
-        // Right Auth Container (CardLayout: LOGIN vs REGISTER)
+        // Center Container (CardLayout: LOGIN vs REGISTER)
         cardLayout = new CardLayout();
         cardsPanel = new JPanel(cardLayout);
         cardsPanel.setOpaque(false);
@@ -63,145 +62,150 @@ public class LoginFrame extends JFrame {
 
         JPanel centerWrapper = new JPanel(new GridBagLayout());
         centerWrapper.setOpaque(false);
+        centerWrapper.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         centerWrapper.add(cardsPanel);
 
         add(centerWrapper, BorderLayout.CENTER);
     }
 
-    private JPanel createBrandingPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(new Dimension(360, 0));
-        panel.setBackground(Theme.BG_SIDEBAR);
-        panel.setBorder(BorderFactory.createEmptyBorder(40, 36, 40, 36));
-
-        JPanel top = new JPanel(new GridLayout(0, 1, 0, 8));
-        top.setOpaque(false);
-
-        JLabel logoBadge = new JLabel("⚡ PGTR");
-        logoBadge.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        logoBadge.setForeground(Theme.PRIMARY);
-        top.add(logoBadge);
-
-        JLabel appName = new JLabel("Personal Gain");
-        appName.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        appName.setForeground(Theme.TEXT_PRIMARY);
-        top.add(appName);
-
-        JLabel appSub = new JLabel("Tracking System");
-        appSub.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        appSub.setForeground(Theme.TEXT_PRIMARY);
-        top.add(appSub);
-
-        JLabel tag = new JLabel("<html><body style='width: 250px; color: #94A3B8; font-size: 11px;'>" +
-                "Centralized high-performance fitness, gym workouts, nutrition, body measurements, " +
-                "and lifestyle habit engineering dashboard.</body></html>");
-        top.add(tag);
-
-        panel.add(top, BorderLayout.NORTH);
-
-        // Features list
-        JPanel featuresPanel = new JPanel(new GridLayout(0, 1, 0, 14));
-        featuresPanel.setOpaque(false);
-
-        featuresPanel.add(createFeatureItem("🏋️ Gym Workout Logger", "Track volume, sets, reps & PRs"));
-        featuresPanel.add(createFeatureItem("🥗 Macro & Calorie Engine", "Searchable food database & logs"));
-        featuresPanel.add(createFeatureItem("📏 Body Metrics & BMI", "Measurement tracking & progress charts"));
-        featuresPanel.add(createFeatureItem("💧 Water & Sleep Habits", "Intake rings and sleep recovery logs"));
-        featuresPanel.add(createFeatureItem("🏆 Gamified Badges", "Earn streaks and achievement trophies"));
-
-        panel.add(featuresPanel, BorderLayout.CENTER);
-
-        JLabel footer = new JLabel("B.Tech CSE OOP Project • Eclipse & Supabase");
-        footer.setFont(Theme.SMALL);
-        footer.setForeground(Theme.TEXT_DIM);
-        panel.add(footer, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private JPanel createFeatureItem(String title, String subtitle) {
-        JPanel p = new JPanel(new GridLayout(2, 1, 0, 2));
-        p.setOpaque(false);
-        JLabel t = new JLabel(title);
-        t.setFont(Theme.BODY_BOLD);
-        t.setForeground(Theme.TEXT_PRIMARY);
-        JLabel s = new JLabel(subtitle);
-        s.setFont(Theme.SMALL);
-        s.setForeground(Theme.TEXT_DIM);
-        p.add(t);
-        p.add(s);
-        return p;
-    }
-
     private JPanel createLoginCard() {
         ModernCard card = new ModernCard(28);
-        card.setPreferredSize(new Dimension(420, 480));
+        card.setPreferredSize(new Dimension(460, 560));
+        card.setBackgroundColor(Theme.BG_PANEL);
+        card.setBorderColor(Theme.BORDER);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
-        JLabel title = new JLabel("Welcome Back");
+        // 1. Vyntrix Logo at the top, centered
+        JPanel logoWrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        logoWrap.setOpaque(false);
+        logoWrap.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        ImageIcon loginLogo = Theme.getLoginLogo(280, 85);
+        if (loginLogo == null) {
+            loginLogo = Theme.getAppLogo(85, 85);
+        }
+        JLabel logoLabel = new JLabel(loginLogo != null ? loginLogo : new ImageIcon());
+        logoWrap.add(logoLabel);
+        card.add(logoWrap);
+        card.add(Box.createVerticalStrut(10));
+
+        // 2. Welcome Heading
+        JLabel title = new JLabel("Welcome to Vyntrix", SwingConstants.CENTER);
         title.setFont(Theme.TITLE_LARGE);
         title.setForeground(Theme.TEXT_PRIMARY);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(title);
+        card.add(Box.createVerticalStrut(4));
 
-        JLabel sub = new JLabel("Sign in to your fitness dashboard");
+        // 3. Short Subtitle
+        JLabel sub = new JLabel("Track your fitness. Build your future.", SwingConstants.CENTER);
         sub.setFont(Theme.BODY);
         sub.setForeground(Theme.TEXT_MUTED);
-        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(sub);
-        card.add(Box.createVerticalStrut(20));
+        card.add(Box.createVerticalStrut(14));
 
-        // Error banner
-        loginErrorLabel = new JLabel(" ");
+        // Validation / Error Banner
+        loginErrorLabel = new JLabel(" ", SwingConstants.CENTER);
         loginErrorLabel.setFont(Theme.SMALL);
         loginErrorLabel.setForeground(Theme.DANGER);
-        loginErrorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        loginErrorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.add(loginErrorLabel);
         card.add(Box.createVerticalStrut(8));
 
-        // Email
-        card.add(createFieldLabel("EMAIL ADDRESS"));
+        // 4. Email address input
+        JPanel emailPanel = new JPanel();
+        emailPanel.setLayout(new BoxLayout(emailPanel, BoxLayout.Y_AXIS));
+        emailPanel.setOpaque(false);
+        emailPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        emailPanel.setMaximumSize(new Dimension(380, 60));
+
+        JLabel emailLabel = createFieldLabel("EMAIL ADDRESS");
+        emailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        emailPanel.add(emailLabel);
+        emailPanel.add(Box.createVerticalStrut(4));
+
         loginEmailField = new JTextField();
-        loginEmailField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        loginEmailField.setPreferredSize(new Dimension(360, 38));
+        loginEmailField.setMaximumSize(new Dimension(380, 38));
+        loginEmailField.setPreferredSize(new Dimension(380, 38));
         loginEmailField.setFont(Theme.BODY);
         loginEmailField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(loginEmailField);
-        card.add(Box.createVerticalStrut(14));
-
-        // Password
-        card.add(createFieldLabel("PASSWORD"));
-        loginPasswordField = new JPasswordField();
-        loginPasswordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        loginPasswordField.setPreferredSize(new Dimension(360, 38));
-        loginPasswordField.setFont(Theme.BODY);
-        loginPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(loginPasswordField);
-        card.add(Box.createVerticalStrut(22));
-
-        // Sign In Button
-        NeonButton signInBtn = new NeonButton("Sign In to Account", NeonButton.ButtonType.PRIMARY);
-        signInBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-        signInBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(signInBtn);
+        emailPanel.add(loginEmailField);
+        card.add(emailPanel);
         card.add(Box.createVerticalStrut(10));
 
-        // Demo User Quick Button
-        NeonButton demoBtn = new NeonButton("Quick Demo Account", NeonButton.ButtonType.SECONDARY);
-        demoBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        demoBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(demoBtn);
-        card.add(Box.createVerticalStrut(20));
+        // 5. Password input with Show/Hide password option
+        JPanel passPanel = new JPanel();
+        passPanel.setLayout(new BoxLayout(passPanel, BoxLayout.Y_AXIS));
+        passPanel.setOpaque(false);
+        passPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passPanel.setMaximumSize(new Dimension(380, 65));
 
-        // Toggle to Register
+        JLabel passLabel = createFieldLabel("PASSWORD");
+        passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passPanel.add(passLabel);
+        passPanel.add(Box.createVerticalStrut(4));
+
+        JPanel passInputRow = new JPanel(new BorderLayout(6, 0));
+        passInputRow.setOpaque(false);
+        passInputRow.setMaximumSize(new Dimension(380, 38));
+
+        loginPasswordField = new JPasswordField();
+        loginPasswordField.setFont(Theme.BODY);
+        passInputRow.add(loginPasswordField, BorderLayout.CENTER);
+
+        showPasswordToggle = new JToggleButton("Show");
+        showPasswordToggle.setFont(Theme.SMALL);
+        showPasswordToggle.setFocusPainted(false);
+        showPasswordToggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        showPasswordToggle.setPreferredSize(new Dimension(68, 38));
+        char defaultEcho = loginPasswordField.getEchoChar();
+
+        showPasswordToggle.addActionListener(e -> {
+            if (showPasswordToggle.isSelected()) {
+                loginPasswordField.setEchoChar((char) 0);
+                showPasswordToggle.setText("Hide");
+            } else {
+                loginPasswordField.setEchoChar(defaultEcho);
+                showPasswordToggle.setText("Show");
+            }
+        });
+        passInputRow.add(showPasswordToggle, BorderLayout.EAST);
+        passPanel.add(passInputRow);
+        card.add(passPanel);
+        card.add(Box.createVerticalStrut(18));
+
+        // 6. Modern Login Button
+        JPanel btnPanel = new JPanel();
+        btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.Y_AXIS));
+        btnPanel.setOpaque(false);
+        btnPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnPanel.setMaximumSize(new Dimension(380, 95));
+
+        NeonButton signInBtn = new NeonButton("Sign In to Vyntrix", NeonButton.ButtonType.PRIMARY);
+        signInBtn.setMaximumSize(new Dimension(380, 42));
+        signInBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnPanel.add(signInBtn);
+        btnPanel.add(Box.createVerticalStrut(8));
+
+        NeonButton demoBtn = new NeonButton("Quick Demo Account", NeonButton.ButtonType.SECONDARY);
+        demoBtn.setMaximumSize(new Dimension(380, 36));
+        demoBtn.setFont(Theme.BODY);
+        demoBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnPanel.add(demoBtn);
+        card.add(btnPanel);
+        card.add(Box.createVerticalStrut(16));
+
+        // 7. Registration link for new users
         JPanel togglePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
         togglePanel.setOpaque(false);
-        togglePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel noAcc = new JLabel("Don't have an account?");
+        togglePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel noAcc = new JLabel("New to Vyntrix?");
         noAcc.setFont(Theme.BODY);
         noAcc.setForeground(Theme.TEXT_MUTED);
 
-        JButton regLink = new JButton("Create Account");
+        JButton regLink = new JButton("Create an Account");
         regLink.setFont(Theme.BODY_BOLD);
         regLink.setForeground(Theme.PRIMARY);
         regLink.setBorderPainted(false);
@@ -225,18 +229,23 @@ public class LoginFrame extends JFrame {
     }
 
     private JPanel createRegisterCard() {
-        ModernCard card = new ModernCard(24);
-        card.setPreferredSize(new Dimension(450, 560));
+        ModernCard card = new ModernCard(26);
+        card.setPreferredSize(new Dimension(500, 580));
+        card.setBackgroundColor(Theme.BG_PANEL);
+        card.setBorderColor(Theme.BORDER);
         card.setLayout(new BorderLayout(0, 10));
 
-        JPanel top = new JPanel(new GridLayout(0, 1, 0, 4));
+        JPanel top = new JPanel(new GridLayout(0, 1, 0, 3));
         top.setOpaque(false);
-        JLabel title = new JLabel("Create Your Profile");
+
+        JLabel title = new JLabel("Join Vyntrix");
         title.setFont(Theme.TITLE_LARGE);
         title.setForeground(Theme.TEXT_PRIMARY);
-        JLabel sub = new JLabel("Personalize your calories, targets, and stats");
+
+        JLabel sub = new JLabel("Set up your personalized fitness & nutrition targets");
         sub.setFont(Theme.BODY);
         sub.setForeground(Theme.TEXT_MUTED);
+
         regErrorLabel = new JLabel(" ");
         regErrorLabel.setFont(Theme.SMALL);
         regErrorLabel.setForeground(Theme.DANGER);
@@ -250,40 +259,31 @@ public class LoginFrame extends JFrame {
         JPanel form = new JPanel(new GridLayout(0, 2, 12, 10));
         form.setOpaque(false);
 
-        // Name
         regNameField = new JTextField();
         form.add(wrapField("FULL NAME", regNameField));
 
-        // Email
         regEmailField = new JTextField();
         form.add(wrapField("EMAIL ADDRESS", regEmailField));
 
-        // Password
         regPasswordField = new JPasswordField();
-        form.add(wrapField("PASSWORD (MIN 6 CHARS)", regPasswordField));
+        form.add(wrapField("PASSWORD (MIN 6 CHARACTERS)", regPasswordField));
 
-        // Age
-        regAgeSpinner = new JSpinner(new SpinnerNumberModel(21, 12, 100, 1));
+        regAgeSpinner = new JSpinner(new SpinnerNumberModel(22, 12, 100, 1));
         form.add(wrapField("AGE (YEARS)", regAgeSpinner));
 
-        // Height
         regHeightSpinner = new JSpinner(new SpinnerNumberModel(175.0, 80.0, 240.0, 0.5));
         form.add(wrapField("HEIGHT (CM)", regHeightSpinner));
 
-        // Weight
         regWeightSpinner = new JSpinner(new SpinnerNumberModel(72.0, 30.0, 250.0, 0.5));
         form.add(wrapField("CURRENT WEIGHT (KG)", regWeightSpinner));
 
-        // Target Weight
         regTargetWeightSpinner = new JSpinner(new SpinnerNumberModel(78.0, 30.0, 250.0, 0.5));
         form.add(wrapField("TARGET WEIGHT (KG)", regTargetWeightSpinner));
 
-        // Goal
         regGoalCombo = new JComboBox<>(FitnessGoalType.values());
         regGoalCombo.setSelectedItem(FitnessGoalType.MUSCLE_GAIN);
         form.add(wrapField("FITNESS GOAL", regGoalCombo));
 
-        // Activity Level
         regActivityCombo = new JComboBox<>(ActivityLevel.values());
         regActivityCombo.setSelectedItem(ActivityLevel.MODERATELY_ACTIVE);
         form.add(wrapField("ACTIVITY LEVEL", regActivityCombo));
@@ -294,8 +294,8 @@ public class LoginFrame extends JFrame {
         JPanel bottom = new JPanel(new GridLayout(0, 1, 0, 8));
         bottom.setOpaque(false);
 
-        NeonButton createBtn = new NeonButton("Complete Registration & Enter", NeonButton.ButtonType.PRIMARY);
-        createBtn.setPreferredSize(new Dimension(0, 40));
+        NeonButton createBtn = new NeonButton("Complete Registration & Enter Vyntrix", NeonButton.ButtonType.PRIMARY);
+        createBtn.setPreferredSize(new Dimension(0, 42));
         bottom.add(createBtn);
 
         JPanel backPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
@@ -344,10 +344,24 @@ public class LoginFrame extends JFrame {
     }
 
     private void handleLogin() {
-        String email = loginEmailField.getText();
+        String email = loginEmailField.getText().trim();
         String pass = new String(loginPasswordField.getPassword());
 
-        loginErrorLabel.setText("Authenticating...");
+        if (email.isEmpty()) {
+            loginErrorLabel.setText("Please enter your email address.");
+            loginErrorLabel.setForeground(Theme.DANGER);
+            loginEmailField.requestFocus();
+            return;
+        }
+
+        if (pass.isEmpty()) {
+            loginErrorLabel.setText("Please enter your password.");
+            loginErrorLabel.setForeground(Theme.DANGER);
+            loginPasswordField.requestFocus();
+            return;
+        }
+
+        loginErrorLabel.setText("Authenticating with Vyntrix...");
         loginErrorLabel.setForeground(Theme.TEXT_MUTED);
 
         SwingWorker<User, Void> worker = new SwingWorker<>() {
@@ -372,8 +386,8 @@ public class LoginFrame extends JFrame {
     }
 
     private void handleRegister() {
-        String name = regNameField.getText();
-        String email = regEmailField.getText();
+        String name = regNameField.getText().trim();
+        String email = regEmailField.getText().trim();
         String pass = new String(regPasswordField.getPassword());
         int age = (int) regAgeSpinner.getValue();
         double height = ((Number) regHeightSpinner.getValue()).doubleValue();
@@ -382,7 +396,19 @@ public class LoginFrame extends JFrame {
         FitnessGoalType goal = (FitnessGoalType) regGoalCombo.getSelectedItem();
         ActivityLevel activity = (ActivityLevel) regActivityCombo.getSelectedItem();
 
-        regErrorLabel.setText("Creating account...");
+        if (name.isEmpty() || email.isEmpty() || pass.isEmpty()) {
+            regErrorLabel.setText("Please fill out all required fields.");
+            regErrorLabel.setForeground(Theme.DANGER);
+            return;
+        }
+
+        if (pass.length() < 6) {
+            regErrorLabel.setText("Password must be at least 6 characters.");
+            regErrorLabel.setForeground(Theme.DANGER);
+            return;
+        }
+
+        regErrorLabel.setText("Creating your Vyntrix account...");
         regErrorLabel.setForeground(Theme.TEXT_MUTED);
 
         SwingWorker<User, Void> worker = new SwingWorker<>() {
@@ -396,8 +422,8 @@ public class LoginFrame extends JFrame {
                 try {
                     User user = get();
                     JOptionPane.showMessageDialog(LoginFrame.this,
-                            "Registration successful! Welcome to PGTR, " + user.getFullName() + "!",
-                            "Account Created", JOptionPane.INFORMATION_MESSAGE);
+                            "Registration successful! Welcome to Vyntrix, " + user.getFullName() + "!",
+                            "Welcome to Vyntrix", JOptionPane.INFORMATION_MESSAGE);
                     launchMainDashboard(user);
                 } catch (Exception ex) {
                     Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
@@ -410,18 +436,18 @@ public class LoginFrame extends JFrame {
     }
 
     private void handleDemoLogin() {
-        loginEmailField.setText("demo@pgtr.com");
+        loginEmailField.setText("demo@vyntrix.com");
         loginPasswordField.setText("demo123");
 
         SwingWorker<User, Void> worker = new SwingWorker<>() {
             @Override
             protected User doInBackground() throws Exception {
                 try {
-                    return authService.login("demo@pgtr.com", "demo123");
+                    return authService.login("demo@vyntrix.com", "demo123");
                 } catch (Exception notFound) {
                     // Create demo account if it doesn't exist yet
                     return authService.register(
-                            "Alex Mercer", "demo@pgtr.com", "demo123",
+                            "Alex Mercer", "demo@vyntrix.com", "demo123",
                             22, 178.0, 75.0, 80.0,
                             FitnessGoalType.MUSCLE_GAIN, ActivityLevel.MODERATELY_ACTIVE
                     );

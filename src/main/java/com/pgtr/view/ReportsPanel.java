@@ -195,7 +195,7 @@ public class ReportsPanel extends JPanel {
         if (user == null) return;
 
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setSelectedFile(new File("pgtr_workouts_export.csv"));
+        fileChooser.setSelectedFile(new File("vyntrix_workouts_export.csv"));
         int res = fileChooser.showSaveDialog(mainFrame);
         if (res == JFileChooser.APPROVE_OPTION) {
             File target = fileChooser.getSelectedFile();
@@ -215,7 +215,7 @@ public class ReportsPanel extends JPanel {
         if (user == null) return;
 
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setSelectedFile(new File("pgtr_nutrition_export.csv"));
+        fileChooser.setSelectedFile(new File("vyntrix_nutrition_export.csv"));
         int res = fileChooser.showSaveDialog(mainFrame);
         if (res == JFileChooser.APPROVE_OPTION) {
             File target = fileChooser.getSelectedFile();

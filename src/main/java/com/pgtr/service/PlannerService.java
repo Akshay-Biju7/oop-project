@@ -33,11 +33,31 @@ public class PlannerService {
         return plannerDAO.deletePlan(id, userId);
     }
 
+    public boolean deletePlanForDay(String userId, String mode, DayOfWeek day) throws SQLException {
+        return plannerDAO.deletePlanForDay(userId, mode, day);
+    }
+
     public List<WorkoutPlan> getWeeklySchedule(String userId) throws SQLException {
         return plannerDAO.getWeeklyPlans(userId);
     }
 
+    public List<WorkoutPlan> getWeeklySchedule(String userId, String mode) throws SQLException {
+        return plannerDAO.getWeeklyPlans(userId, mode);
+    }
+
     public Optional<WorkoutPlan> getPlanForToday(String userId) throws SQLException {
         return plannerDAO.getPlanForDay(userId, java.time.LocalDate.now().getDayOfWeek());
+    }
+
+    public Optional<WorkoutPlan> getPlanForToday(String userId, String mode) throws SQLException {
+        return plannerDAO.getPlanForDay(userId, mode, java.time.LocalDate.now().getDayOfWeek());
+    }
+
+    public boolean setPlanCompleted(String planId, String userId, boolean completed) throws SQLException {
+        return plannerDAO.setPlanCompleted(planId, userId, completed);
+    }
+
+    public void resetToDefault(String userId, String mode) throws SQLException {
+        plannerDAO.resetPlansToDefault(userId, mode);
     }
 }

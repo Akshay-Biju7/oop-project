@@ -225,6 +225,48 @@ public class SystemVerification {
             System.out.println("  ✓ JFreeChart and CSV exports generated successfully!");
             testsPassed++;
 
+            // 13. Test Cut Mode vs Bulk Mode Weekly Workout Plans
+            totalTests++;
+            System.out.println("\n[Test 13] Testing Cut Mode vs Bulk Mode Workout Plans...");
+            var cutSchedule = plannerService.getWeeklySchedule(user.getId(), "CUT");
+            var bulkSchedule = plannerService.getWeeklySchedule(user.getId(), "BULK");
+            assertTrue(!cutSchedule.isEmpty(), "Cut mode schedule should be seeded and retrieved");
+            assertTrue(!bulkSchedule.isEmpty(), "Bulk mode schedule should be seeded and retrieved");
+            assertTrue(cutSchedule.get(0).getPlanMode().equalsIgnoreCase("CUT"), "Cut schedule mode should be CUT");
+            assertTrue(bulkSchedule.get(0).getPlanMode().equalsIgnoreCase("BULK"), "Bulk schedule mode should be BULK");
+            System.out.printf("  Cut Mode Monday: %s (Rest: %ds, Cardio: %s)%n",
+                    cutSchedule.get(0).getWorkoutName(), cutSchedule.get(0).getRestSeconds(), cutSchedule.get(0).getCardio());
+            System.out.printf("  Bulk Mode Monday: %s (Rest: %ds, Cardio: %s)%n",
+                    bulkSchedule.get(0).getWorkoutName(), bulkSchedule.get(0).getRestSeconds(), bulkSchedule.get(0).getCardio());
+            System.out.println("  ✓ Cut and Bulk workout splits verified!");
+            testsPassed++;
+
+            // 14. Test Cut Mode vs Bulk Mode Nutrition Plans & Logging as Consumed
+            totalTests++;
+            System.out.println("\n[Test 14] Testing Cut Mode vs Bulk Mode Nutrition Plans...");
+            var cutMeals = nutritionService.getNutritionPlan(user.getId(), "CUT");
+            var bulkMeals = nutritionService.getNutritionPlan(user.getId(), "BULK");
+            assertTrue(!cutMeals.isEmpty(), "Cut nutrition plan should be seeded");
+            assertTrue(!bulkMeals.isEmpty(), "Bulk nutrition plan should be seeded");
+
+            int mealsBefore = nutritionService.getMealsForDate(user.getId(), LocalDate.now()).size();
+            boolean planLogged = nutritionService.logPlannedMealAsConsumed(cutMeals.get(0), LocalDate.now());
+            assertTrue(planLogged, "Planned meal item should log as actual consumed meal");
+            int mealsAfter = nutritionService.getMealsForDate(user.getId(), LocalDate.now()).size();
+            assertEquals(mealsBefore + 1, mealsAfter, "Actual meals count should increment by 1");
+            System.out.printf("  Cut Plan Items: %d | Bulk Plan Items: %d%n", cutMeals.size(), bulkMeals.size());
+            System.out.println("  Logged plan item as actual consumed meal -> verified!");
+            testsPassed++;
+
+            // 15. Test Vyntrix Branding & Official Logo Assets
+            totalTests++;
+            System.out.println("\n[Test 15] Testing Vyntrix Official Branding & Logo Assets...");
+            assertNotNull(com.pgtr.util.Theme.getAppLogo(100, 100), "Official app silhouette logo should load from resources");
+            assertNotNull(com.pgtr.util.Theme.getLoginLogo(200, 80), "Official login banner logo should load from resources");
+            assertNotNull(com.pgtr.util.Theme.getAppIcon(), "Application window icon should load from resources");
+            System.out.println("  ✓ Official Vyntrix logo assets loaded and verified!");
+            testsPassed++;
+
             System.out.println("\n=================================================================");
             System.out.printf("  ALL TESTS PASSED: %d / %d (100%% Success Rate)%n", testsPassed, totalTests);
             System.out.println("=================================================================\n");

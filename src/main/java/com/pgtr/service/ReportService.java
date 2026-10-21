@@ -236,7 +236,7 @@ public class ReportService {
     public String generateProgressReport(User user) {
         StringBuilder sb = new StringBuilder();
         sb.append("======================================================================\n");
-        sb.append("         PERSONAL GAIN TRACKING SYSTEM — PROGRESS REPORT             \n");
+        sb.append("    VYNTRIX — FITNESS & PERSONAL GAIN TRACKING SYSTEM PROGRESS REPORT \n");
         sb.append("======================================================================\n\n");
         sb.append("Generated On: ").append(DateUtil.formatDate(LocalDate.now())).append("\n\n");
 

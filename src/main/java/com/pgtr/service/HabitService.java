@@ -58,6 +58,33 @@ public class HabitService {
         return waterDAO.getWaterLogsForDate(userId, LocalDate.now());
     }
 
+    public int getWaterTotalForDate(String userId, LocalDate date) throws SQLException {
+        return waterDAO.getTotalWaterForDate(userId, date);
+    }
+
+    public List<WaterLog> getWaterLogsForDate(String userId, LocalDate date) throws SQLException {
+        return waterDAO.getWaterLogsForDate(userId, date);
+    }
+
+    public boolean addWaterForDate(String userId, LocalDate date, int amountMl) throws SQLException {
+        WaterLog log = new WaterLog(null, userId, date, amountMl, LocalTime.now());
+        boolean saved = waterDAO.addWater(log);
+        if (saved) {
+            User user = UserSession.getInstance().getCurrentUser();
+            if (user != null && user.getId().equals(userId)) {
+                int total = waterDAO.getTotalWaterForDate(userId, date);
+                if (total >= user.getDailyWaterTarget()) {
+                    achievementService.awardIfEligible(userId, "HYDRATION_HERO");
+                }
+            }
+        }
+        return saved;
+    }
+
+    public boolean deleteWaterLog(String id, String userId) throws SQLException {
+        return waterDAO.deleteWaterLog(id, userId);
+    }
+
     public Map<LocalDate, Integer> getWeeklyWaterHistory(String userId, LocalDate start, LocalDate end) throws SQLException {
         return waterDAO.getWaterHistory(userId, start, end);
     }
